@@ -50,3 +50,5 @@ __screenshots__/
 
 # env files
 .env*
+vitest.config.*.timestamp*
+.vitest

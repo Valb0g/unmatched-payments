@@ -1,0 +1,13 @@
+{
+  "name": "payments-feature-queue",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/payments/feature-queue/src",
+  "prefix": "pay",
+  "projectType": "library",
+  "tags": ["scope:payments", "type:feature"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

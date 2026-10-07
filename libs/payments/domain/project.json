@@ -1,0 +1,12 @@
+{
+  "name": "payments-domain",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/payments/domain/src",
+  "projectType": "library",
+  "tags": ["scope:payments", "type:domain"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

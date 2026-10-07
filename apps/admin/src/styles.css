@@ -1,1 +1,114 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'tailwindcss';
+@import '@spartan-ng/brain/hlm-tailwind-preset.css';
+
+@theme inline {
+  --color-subtle: var(--subtle);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+  --color-primary-text: var(--primary-text);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-border: var(--primary-border);
+}
+
+:root {
+  color-scheme: light;
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius: 0.5rem;
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #09090b;
+  --muted: #f4f4f5;
+  --muted-foreground: #66666e;
+  --accent: #f4f4f5;
+  --accent-foreground: #09090b;
+  --destructive: #b91c1c;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #66666e;
+  --subtle: #fafafa;
+  --foreground-subtle: #3f3f46;
+  --border-strong: #d4d4d8;
+  --warning: #9a3412;
+  --warning-soft: #fff7ed;
+  --warning-border: #fed7aa;
+  --primary-text: #2563eb;
+  --primary-soft: rgb(37 99 235 / 0.08);
+  --primary-border: rgb(37 99 235 / 0.25);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #111113;
+  --card-foreground: #fafafa;
+  --popover: #111113;
+  --popover-foreground: #fafafa;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #18181b;
+  --secondary-foreground: #fafafa;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #f87171;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #a1a1aa;
+  --subtle: #0f0f11;
+  --foreground-subtle: #d4d4d8;
+  --border-strong: #3f3f46;
+  --warning: #fdba74;
+  --warning-soft: rgb(249 115 22 / 0.12);
+  --warning-border: rgb(249 115 22 / 0.32);
+  --primary-text: #87a9f4;
+  --primary-soft: rgb(37 99 235 / 0.18);
+  --primary-border: rgb(37 99 235 / 0.4);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    font-size: 13px;
+    line-height: 20px;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@keyframes row-arrived {
+  from {
+    background-color: var(--primary-soft);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.row-arrived {
+  animation: row-arrived 2.4s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-arrived {
+    animation: none;
+  }
+}

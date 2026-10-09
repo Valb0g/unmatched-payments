@@ -76,4 +76,31 @@ describe('QueuePage', () => {
     expect(rows[2]?.classList).not.toContain('row-arrived');
     expect(element.textContent).not.toContain('new payments');
   });
+
+  it('shows Reset only while a filter is active', async () => {
+    const fixture = TestBed.createComponent(QueuePage);
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    const resetButton = () =>
+      [...element.querySelectorAll('button')].find(
+        (button) => button.textContent?.trim() === 'Reset',
+      );
+
+    expect(resetButton()).toBeUndefined();
+
+    [
+      ...element.querySelectorAll<HTMLButtonElement>(
+        '[aria-label="Issue type"] button',
+      ),
+    ]
+      .find((button) => button.textContent?.includes('Duplicate'))
+      ?.click();
+    await fixture.whenStable();
+    expect(resetButton()).toBeDefined();
+
+    resetButton()?.click();
+    await fixture.whenStable();
+    expect(resetButton()).toBeUndefined();
+    expect(element.querySelectorAll('tbody tr')).toHaveLength(14);
+  });
 });

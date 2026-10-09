@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { countByIssue, DEFAULT_FILTERS, filterPayments } from './filters';
+import {
+  countByIssue,
+  DEFAULT_FILTERS,
+  filterPayments,
+  hasActiveFilters,
+} from './filters';
 import { aPayment, FIXTURE_NOW } from './payment.fixture';
 
 const minutesAgo = (m: number) => new Date(FIXTURE_NOW.getTime() - m * 60_000);
@@ -89,5 +94,27 @@ describe('countByIssue', () => {
     expect(counts.duplicate).toBe(1);
     expect(counts.underpaid).toBe(1);
     expect(counts.overpaid).toBe(0);
+  });
+});
+
+describe('hasActiveFilters', () => {
+  it('is false for the defaults, even with whitespace-only search or reordered statuses', () => {
+    expect(hasActiveFilters(DEFAULT_FILTERS)).toBe(false);
+    expect(hasActiveFilters({ ...DEFAULT_FILTERS, search: '   ' })).toBe(false);
+    expect(
+      hasActiveFilters({
+        ...DEFAULT_FILTERS,
+        statuses: ['escalated', 'open', 'in-review'],
+      }),
+    ).toBe(false);
+  });
+
+  it.each([
+    { issue: 'duplicate' as const },
+    { network: 'tron' as const },
+    { statuses: ['open' as const] },
+    { search: 'INV' },
+  ])('is true when %o differs from the defaults', (patch) => {
+    expect(hasActiveFilters({ ...DEFAULT_FILTERS, ...patch })).toBe(true);
   });
 });

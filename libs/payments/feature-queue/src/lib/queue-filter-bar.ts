@@ -10,6 +10,7 @@ import { lucideCalendar } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import {
+  hasActiveFilters,
   isNetworkId,
   isPaymentStatus,
   NETWORK_IDS,
@@ -87,15 +88,17 @@ import {
       <span class="text-muted-foreground">Assignee</span>
       Anyone
     </button>
-    <button
-      hlmBtn
-      variant="ghost"
-      size="sm"
-      class="h-[30px] text-muted-foreground"
-      (click)="resetFilters.emit()"
-    >
-      Reset
-    </button>
+    @if (hasActiveFilters()) {
+      <button
+        hlmBtn
+        variant="ghost"
+        size="sm"
+        class="h-[30px] text-muted-foreground"
+        (click)="resetFilters.emit()"
+      >
+        Reset
+      </button>
+    }
 
     <div class="ml-auto flex items-center gap-3">
       <ng-content />
@@ -121,6 +124,10 @@ export class QueueFilterBar {
     value,
     label: STATUS_LABELS[value],
   }));
+
+  protected readonly hasActiveFilters = computed(() =>
+    hasActiveFilters(this.filters()),
+  );
 
   protected readonly networkLabel = computed(() => {
     const network = this.filters().network;

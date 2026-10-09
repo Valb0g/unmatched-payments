@@ -24,6 +24,15 @@ export const DEFAULT_FILTERS: QueueFilters = {
   search: '',
 };
 
+export function hasActiveFilters(filters: QueueFilters): boolean {
+  return (
+    filters.issue !== 'all' ||
+    filters.network !== 'all' ||
+    filters.search.trim() !== '' ||
+    !PAYMENT_STATUSES.every((status) => filters.statuses.includes(status))
+  );
+}
+
 export type IssueCounts = Readonly<Record<IssueFilter, number>>;
 
 export function filterPayments(

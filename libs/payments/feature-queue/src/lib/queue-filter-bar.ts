@@ -70,7 +70,7 @@ import {
       variant="outline"
       size="sm"
       class="h-[30px]"
-      aria-disabled="true"
+      disabled
       title="Available in the Actions stage"
     >
       <ng-icon name="lucideCalendar" size="14px" aria-hidden="true" />
@@ -81,7 +81,7 @@ import {
       variant="outline"
       size="sm"
       class="h-[30px] border-dashed"
-      aria-disabled="true"
+      disabled
       title="Available in the Actions stage"
     >
       <span class="text-muted-foreground">Assignee</span>

@@ -26,28 +26,33 @@ export class PaymentsStore {
   private readonly api = inject(MockPaymentsApi);
   private readonly clock = inject(CLOCK);
 
-  private readonly paymentsState = signal<readonly UnmatchedPayment[]>([]);
+  private readonly visibleState = signal<readonly UnmatchedPayment[]>([]);
+  private readonly pendingState = signal<readonly UnmatchedPayment[]>([]);
   private readonly filtersState = signal<QueueFilters>(DEFAULT_FILTERS);
   private readonly pageState = signal(0);
-  private readonly selectedIdState = signal<string | null>(null);
-  private readonly lastArrivedIdState = signal<string | null>(null);
+  private readonly arrivedIdsState = signal<ReadonlySet<string>>(new Set());
   private readonly connectionState = signal<Connection>('live');
 
   readonly filters = this.filtersState.asReadonly();
-  readonly lastArrivedId = this.lastArrivedIdState.asReadonly();
+  readonly arrivedIds = this.arrivedIdsState.asReadonly();
   readonly connection = this.connectionState.asReadonly();
   readonly now = toSignal(interval(NOW_TICK_MS).pipe(map(() => this.clock())), {
     initialValue: this.clock(),
   });
 
+  readonly payments = computed(() => [
+    ...this.pendingState(),
+    ...this.visibleState(),
+  ]);
+  readonly pendingCount = computed(() => this.pendingState().length);
   readonly filtered = computed(() =>
-    filterPayments(this.paymentsState(), this.filtersState()),
+    filterPayments(this.visibleState(), this.filtersState()),
   );
   readonly issueCounts = computed(() =>
-    countByIssue(this.paymentsState(), this.filtersState()),
+    countByIssue(this.visibleState(), this.filtersState()),
   );
   readonly kpis = computed(() =>
-    computeKpis(this.paymentsState(), this.now(), DEMO_OPERATOR.id),
+    computeKpis(this.payments(), this.now(), DEMO_OPERATOR.id),
   );
   readonly pageCount = computed(() =>
     Math.max(1, Math.ceil(this.filtered().length / PAGE_SIZE)),
@@ -59,26 +64,18 @@ export class PaymentsStore {
     const start = this.pageIndex() * PAGE_SIZE;
     return this.filtered().slice(start, start + PAGE_SIZE);
   });
-  readonly selected = computed(
-    () =>
-      this.paymentsState().find(
-        (payment) => payment.id === this.selectedIdState(),
-      ) ?? null,
-  );
 
   constructor() {
     this.api
       .list()
       .pipe(
-        tap((payments) => this.paymentsState.set(payments)),
+        tap((payments) => this.visibleState.set(payments)),
         switchMap(() => this.api.incoming$),
         takeUntilDestroyed(),
       )
       .subscribe({
-        next: (payment) => {
-          this.paymentsState.update((list) => [payment, ...list]);
-          this.lastArrivedIdState.set(payment.id);
-        },
+        next: (payment) =>
+          this.pendingState.update((list) => [payment, ...list]),
         error: (error: unknown) => {
           console.error('Payments stream failed', error);
           this.connectionState.set('offline');
@@ -115,8 +112,12 @@ export class PaymentsStore {
     this.pageState.set(Math.max(this.pageIndex() - 1, 0));
   }
 
-  select(id: string | null): void {
-    this.selectedIdState.set(id);
+  showPending(): void {
+    const pending = this.pendingState();
+    this.visibleState.update((list) => [...pending, ...list]);
+    this.arrivedIdsState.set(new Set(pending.map((payment) => payment.id)));
+    this.pendingState.set([]);
+    this.pageState.set(0);
   }
 
   private patchFilters(patch: Partial<QueueFilters>): void {

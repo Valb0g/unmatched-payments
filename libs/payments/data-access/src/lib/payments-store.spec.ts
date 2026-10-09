@@ -38,6 +38,10 @@ function manyPayments(count: number): UnmatchedPayment[] {
   );
 }
 
+function liveArrival(sequence = 99): UnmatchedPayment {
+  return generatePayment(createRng(sequence), { now: NOW, sequence });
+}
+
 describe('PaymentsStore', () => {
   it('loads the initial queue newest first', () => {
     const { store } = setup();
@@ -46,12 +50,45 @@ describe('PaymentsStore', () => {
     expect(store.connection()).toBe('live');
   });
 
-  it('prepends streamed payments and marks the latest arrival', () => {
+  it('holds streamed payments out of the table but counts them in kpis', () => {
     const { store, incoming } = setup();
-    incoming.next(generatePayment(createRng(1), { now: NOW, sequence: 1 }));
-    expect(store.filtered()[0]?.id).toBe('pay_live_1');
-    expect(store.lastArrivedId()).toBe('pay_live_1');
-    expect(store.kpis().unmatchedCount).toBe(SEED_SIZE + 1);
+    incoming.next(liveArrival(1));
+    incoming.next(liveArrival(2));
+
+    expect(store.filtered()).toHaveLength(SEED_SIZE);
+    expect(store.issueCounts().all).toBe(SEED_SIZE);
+    expect(store.pendingCount()).toBe(2);
+    expect(store.kpis().unmatchedCount).toBe(SEED_SIZE + 2);
+  });
+
+  it('reveals held payments on top, marks them and returns to the first page', () => {
+    const { store, incoming } = setup(manyPayments(30));
+    store.nextPage();
+    incoming.next(liveArrival(98));
+    incoming.next(liveArrival(99));
+
+    store.showPending();
+
+    expect(store.pageIndex()).toBe(0);
+    expect(store.pendingCount()).toBe(0);
+    expect(
+      store
+        .filtered()
+        .slice(0, 2)
+        .map((p) => p.id),
+    ).toEqual(['pay_live_99', 'pay_live_98']);
+    expect([...store.arrivedIds()]).toEqual(['pay_live_99', 'pay_live_98']);
+  });
+
+  it('keeps the current page stable while payments arrive', () => {
+    const { store, incoming } = setup(manyPayments(30));
+    store.nextPage();
+    const rowsBefore = store.pageRows().map((p) => p.id);
+
+    incoming.next(liveArrival());
+
+    expect(store.pageIndex()).toBe(1);
+    expect(store.pageRows().map((p) => p.id)).toEqual(rowsBefore);
   });
 
   it('pages rows by PAGE_SIZE and clamps navigation', () => {
@@ -86,10 +123,12 @@ describe('PaymentsStore', () => {
     expect(store.filtered()).toHaveLength(SEED_SIZE);
   });
 
-  it('exposes the selected payment', () => {
-    const { store } = setup();
-    store.select('pay_seed_02');
-    expect(store.selected()?.id).toBe('pay_seed_02');
+  it('exposes every payment, held ones included, for lookups by id', () => {
+    const { store, incoming } = setup();
+    incoming.next(liveArrival());
+    const ids = store.payments().map((p) => p.id);
+    expect(ids).toContain('pay_seed_02');
+    expect(ids).toContain('pay_live_99');
   });
 
   it('goes offline when the stream fails', () => {

@@ -36,6 +36,8 @@ import type { QueueRowVm } from './presentation';
             <input
               type="checkbox"
               class="m-0 accent-primary"
+              disabled
+              title="Available in the Actions stage"
               aria-label="Select all payments on this page"
             />
           </th>
@@ -59,12 +61,14 @@ import type { QueueRowVm } from './presentation';
         @for (row of rows(); track row.id) {
           <tr
             class="h-[52px] border-b border-border hover:bg-subtle"
-            [class.row-arrived]="row.id === arrivedId()"
+            [class.row-arrived]="arrivedIds().has(row.id)"
           >
             <td class="pl-3.5">
               <input
                 type="checkbox"
                 class="m-0 accent-primary"
+                disabled
+                title="Available in the Actions stage"
                 [attr.aria-label]="
                   'Select payment ' + row.amount + ' ' + row.token
                 "
@@ -196,7 +200,7 @@ import type { QueueRowVm } from './presentation';
         <span
           class="tabular ml-1.5 rounded-md border border-border px-2 py-0.5 font-mono text-foreground"
         >
-          25
+          {{ pageSize() }}
         </span>
       </span>
       <div class="flex items-center gap-2">
@@ -231,7 +235,8 @@ import type { QueueRowVm } from './presentation';
 })
 export class PaymentsTable {
   readonly rows = input.required<readonly QueueRowVm[]>();
-  readonly arrivedId = input<string | null>(null);
+  readonly arrivedIds = input<ReadonlySet<string>>(new Set());
+  readonly pageSize = input.required<number>();
   readonly pageIndex = input.required<number>();
   readonly pageCount = input.required<number>();
   readonly previousPage = output<void>();

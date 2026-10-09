@@ -1,7 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  effect,
+  computed,
   inject,
   input,
 } from '@angular/core';
@@ -18,7 +18,7 @@ import { PaymentsStore } from '@unmatched-payments/payments-data-access';
         >← Back to queue</a
       >
       <h1 class="m-0 text-xl font-semibold">Payment detail</h1>
-      @if (store.selected(); as payment) {
+      @if (payment(); as payment) {
         <p class="m-0 font-mono break-all text-muted-foreground">
           {{ payment.txHash }}
         </p>
@@ -32,10 +32,11 @@ import { PaymentsStore } from '@unmatched-payments/payments-data-access';
   `,
 })
 export class PaymentDetailPlaceholder {
-  protected readonly store = inject(PaymentsStore);
+  private readonly store = inject(PaymentsStore);
   readonly id = input.required<string>();
 
-  constructor() {
-    effect(() => this.store.select(this.id()));
-  }
+  protected readonly payment = computed(
+    () =>
+      this.store.payments().find((payment) => payment.id === this.id()) ?? null,
+  );
 }

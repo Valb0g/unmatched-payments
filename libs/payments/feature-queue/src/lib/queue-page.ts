@@ -2,12 +2,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
+  viewChild,
 } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideDownload } from '@ng-icons/lucide';
+import { lucideArrowUp, lucideDownload } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { PaymentsStore } from '@unmatched-payments/payments-data-access';
+import {
+  PAGE_SIZE,
+  PaymentsStore,
+} from '@unmatched-payments/payments-data-access';
 import { IssueTabs } from './issue-tabs';
 import { KpiStrip } from './kpi-strip';
 import { PaymentsTable } from './payments-table';
@@ -24,7 +29,7 @@ import { QueueFilterBar } from './queue-filter-bar';
     QueueFilterBar,
     PaymentsTable,
   ],
-  providers: [provideIcons({ lucideDownload })],
+  providers: [provideIcons({ lucideArrowUp, lucideDownload })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex min-w-0 flex-col gap-4' },
   template: `
@@ -43,7 +48,7 @@ import { QueueFilterBar } from './queue-filter-bar';
           hlmBtn
           variant="outline"
           size="sm"
-          aria-disabled="true"
+          disabled
           title="Available in the Actions stage"
         >
           <ng-icon name="lucideDownload" size="14px" aria-hidden="true" />
@@ -53,7 +58,7 @@ import { QueueFilterBar } from './queue-filter-bar';
           hlmBtn
           variant="outline"
           size="sm"
-          aria-disabled="true"
+          disabled
           title="Available in the Actions stage"
         >
           Tolerance rules
@@ -78,9 +83,26 @@ import { QueueFilterBar } from './queue-filter-bar';
       (resetFilters)="store.resetFilters()"
     />
 
+    <div
+      class="sticky top-3 z-10 -mb-4 flex h-0 justify-center"
+      aria-live="polite"
+    >
+      @if (pendingLabel(); as label) {
+        <button
+          type="button"
+          class="mt-12 flex h-8 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-medium text-primary-foreground shadow-md hover:bg-primary/90"
+          (click)="showPending()"
+        >
+          <ng-icon name="lucideArrowUp" size="14px" aria-hidden="true" />
+          {{ label }}
+        </button>
+      }
+    </div>
+
     <pay-payments-table
       [rows]="rows()"
-      [arrivedId]="store.lastArrivedId()"
+      [arrivedIds]="store.arrivedIds()"
+      [pageSize]="pageSize"
       [pageIndex]="store.pageIndex()"
       [pageCount]="store.pageCount()"
       (previousPage)="store.previousPage()"
@@ -90,10 +112,30 @@ import { QueueFilterBar } from './queue-filter-bar';
 })
 export class QueuePage {
   protected readonly store = inject(PaymentsStore);
+  protected readonly pageSize = PAGE_SIZE;
+  private readonly table = viewChild.required(PaymentsTable, {
+    read: ElementRef<HTMLElement>,
+  });
+
+  protected readonly pendingLabel = computed(() => {
+    const count = this.store.pendingCount();
+    if (count === 0) {
+      return null;
+    }
+    return count === 1 ? '1 new payment' : `${count} new payments`;
+  });
   protected readonly kpiTiles = computed(() =>
     toKpiTiles(this.store.kpis(), this.store.now()),
   );
   protected readonly rows = computed(() =>
     this.store.pageRows().map((p) => toQueueRow(p, this.store.now())),
   );
+
+  protected showPending(): void {
+    this.store.showPending();
+    const table = this.table().nativeElement;
+    if (table.getBoundingClientRect().top < 0) {
+      table.scrollIntoView({ block: 'start' });
+    }
+  }
 }

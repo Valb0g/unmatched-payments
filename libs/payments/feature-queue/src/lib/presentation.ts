@@ -11,7 +11,6 @@ import {
   type PaymentStatus,
   type QueueKpis,
   shortenAddress,
-  SLA_MS,
   STATUS_LABELS,
   type UnmatchedPayment,
 } from '@unmatched-payments/payments-domain';
@@ -76,7 +75,7 @@ export function toQueueRow(payment: UnmatchedPayment, now: Date): QueueRowVm {
     id: payment.id,
     time: formatReceivedAt(payment.receivedAt, now),
     age: formatAge(ageMs),
-    ageBreached: ageMs > SLA_MS,
+    ageBreached: isSlaBreached(payment.receivedAt, now),
     amount: formatPaymentAmount(payment),
     token: payment.token,
     network: networkLabel(payment.network, payment.token),

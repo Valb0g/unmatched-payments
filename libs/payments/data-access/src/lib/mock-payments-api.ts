@@ -19,7 +19,7 @@ export const MOCK_STREAM_CONFIG = new InjectionToken<MockStreamConfig>(
   'MOCK_STREAM_CONFIG',
   {
     providedIn: 'root',
-    factory: () => ({ seed: 2026, intervalMs: 6_000, maxEvents: 500 }),
+    factory: () => ({ seed: 2026, intervalMs: 18_000, maxEvents: 500 }),
   },
 );
 

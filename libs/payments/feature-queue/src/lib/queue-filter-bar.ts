@@ -97,12 +97,15 @@ import {
       Reset
     </button>
 
-    <span class="ml-auto text-muted-foreground">
-      Showing
-      <span class="tabular font-mono text-foreground">{{ shown() }}</span> of
-      <span class="tabular font-mono text-foreground">{{ total() }}</span> ·
-      newest first
-    </span>
+    <div class="ml-auto flex items-center gap-3">
+      <ng-content />
+      <span class="text-muted-foreground">
+        Showing
+        <span class="tabular font-mono text-foreground">{{ shown() }}</span> of
+        <span class="tabular font-mono text-foreground">{{ total() }}</span> ·
+        newest first
+      </span>
+    </div>
   `,
 })
 export class QueueFilterBar {

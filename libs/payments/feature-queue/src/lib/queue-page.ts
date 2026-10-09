@@ -2,9 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  ElementRef,
   inject,
-  viewChild,
 } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowUp, lucideDownload } from '@ng-icons/lucide';
@@ -81,23 +79,20 @@ import { QueueFilterBar } from './queue-filter-bar';
       (networkChange)="store.setNetwork($event)"
       (statusesChange)="store.setStatuses($event)"
       (resetFilters)="store.resetFilters()"
-    />
-
-    <div
-      class="sticky top-3 z-10 -mb-4 flex h-0 justify-center"
-      aria-live="polite"
     >
-      @if (pendingLabel(); as label) {
-        <button
-          type="button"
-          class="mt-12 flex h-8 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-medium text-primary-foreground shadow-md hover:bg-primary/90"
-          (click)="showPending()"
-        >
-          <ng-icon name="lucideArrowUp" size="14px" aria-hidden="true" />
-          {{ label }}
-        </button>
-      }
-    </div>
+      <span aria-live="polite">
+        @if (pendingLabel(); as label) {
+          <button
+            type="button"
+            class="flex h-[30px] items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            (click)="store.showPending()"
+          >
+            <ng-icon name="lucideArrowUp" size="14px" aria-hidden="true" />
+            {{ label }}
+          </button>
+        }
+      </span>
+    </pay-queue-filter-bar>
 
     <pay-payments-table
       [rows]="rows()"
@@ -113,9 +108,6 @@ import { QueueFilterBar } from './queue-filter-bar';
 export class QueuePage {
   protected readonly store = inject(PaymentsStore);
   protected readonly pageSize = PAGE_SIZE;
-  private readonly table = viewChild.required(PaymentsTable, {
-    read: ElementRef<HTMLElement>,
-  });
 
   protected readonly pendingLabel = computed(() => {
     const count = this.store.pendingCount();
@@ -130,12 +122,4 @@ export class QueuePage {
   protected readonly rows = computed(() =>
     this.store.pageRows().map((p) => toQueueRow(p, this.store.now())),
   );
-
-  protected showPending(): void {
-    this.store.showPending();
-    const table = this.table().nativeElement;
-    if (table.getBoundingClientRect().top < 0) {
-      table.scrollIntoView({ block: 'start' });
-    }
-  }
 }

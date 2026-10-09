@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { TOKENS } from './catalog';
+import { NETWORK_IDS, NETWORKS, TOKENS } from './catalog';
 import { generatePayment } from './generator';
 import { ISSUE_TYPES } from './payment';
 import { createRng } from './random';
 
 const NOW = new Date('2026-10-07T15:10:00Z');
+
+const TOKEN_NETWORKS: Readonly<Record<string, readonly string[]>> = {
+  USDT: ['tron', 'ethereum', 'bnb', 'arbitrum', 'ton'],
+  USDC: ['ethereum', 'polygon', 'solana'],
+};
 
 describe('createRng', () => {
   it('is deterministic and stays within [0, 1)', () => {
@@ -76,5 +81,21 @@ describe('generatePayment', () => {
       seen.add(payment.issue.type);
     }
     expect([...seen].sort()).toEqual([...ISSUE_TYPES].sort());
+  });
+
+  it('only expects another network that carries the paid token', () => {
+    for (let seed = 1; seed <= 300; seed++) {
+      const payment = generatePayment(createRng(seed), {
+        now: NOW,
+        sequence: seed,
+        issue: 'wrong-network',
+      });
+      const expected = NETWORK_IDS.find(
+        (id) => payment.issue.note === `invoice expects ${NETWORKS[id].name}`,
+      );
+      expect(expected).toBeDefined();
+      expect(expected).not.toBe(payment.network);
+      expect(TOKEN_NETWORKS[payment.token]).toContain(expected);
+    }
   });
 });

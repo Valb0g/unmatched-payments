@@ -24,12 +24,10 @@ const ROUTES: readonly Route[] = [
   { network: 'bitcoin', token: 'BTC' },
 ];
 
-const STABLECOIN_NETWORKS: readonly NetworkId[] = [
-  'tron',
-  'ethereum',
-  'bnb',
-  'polygon',
-];
+// A wrong-network payment needs another network that carries the same token.
+const MULTI_NETWORK_ROUTES = ROUTES.filter(
+  (route) => otherNetworksFor(route).length > 0,
+);
 
 // Invoice ranges in display units (10^displayDecimals).
 const INVOICE_RANGES: Readonly<Record<TokenSymbol, readonly [number, number]>> =
@@ -58,7 +56,10 @@ export function generatePayment(
   options: GenerateOptions,
 ): UnmatchedPayment {
   const issueType = options.issue ?? pick(rng, ISSUE_TYPES);
-  const route = pick(rng, ROUTES);
+  const route = pick(
+    rng,
+    issueType === 'wrong-network' ? MULTI_NETWORK_ROUTES : ROUTES,
+  );
   const token = TOKENS[route.token];
   const [min, max] = INVOICE_RANGES[route.token];
   const invoiceDisplayMinor = BigInt(intBetween(rng, min, max));
@@ -105,10 +106,7 @@ function describeIssue(
     case 'overpaid':
       return describeAmountMismatch(rng, type, invoice, route.token);
     case 'wrong-network': {
-      const expected = pick(
-        rng,
-        STABLECOIN_NETWORKS.filter((network) => network !== route.network),
-      );
+      const expected = pick(rng, otherNetworksFor(route));
       return {
         paidDisplayMinor: invoice,
         note: `invoice expects ${NETWORKS[expected].name}`,
@@ -152,4 +150,12 @@ function describeAmountMismatch(
     paidDisplayMinor: paid,
     note: `${sign}${diffText} ${token} (${sign}${percent}%)`,
   };
+}
+
+function otherNetworksFor(route: Route): NetworkId[] {
+  const networks = ROUTES.filter(
+    (candidate) =>
+      candidate.token === route.token && candidate.network !== route.network,
+  ).map((candidate) => candidate.network);
+  return [...new Set(networks)];
 }

@@ -23,7 +23,7 @@ import type { QueueRowVm } from './presentation';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class:
-      'block overflow-x-auto rounded-[10px] border border-border bg-card shadow-xs',
+      'relative block overflow-x-auto rounded-[10px] border border-border bg-card shadow-xs',
   },
   template: `
     <table class="w-full min-w-[1080px] border-collapse text-left">

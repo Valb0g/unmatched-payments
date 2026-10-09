@@ -16,7 +16,12 @@ describe('MockPaymentsApi', () => {
         { provide: CLOCK, useValue: () => now },
         {
           provide: MOCK_STREAM_CONFIG,
-          useValue: { seed: 1, intervalMs: 6_000, maxEvents: 3 },
+          useValue: {
+            seed: 1,
+            minDelayMs: 6_000,
+            maxDelayMs: 6_000,
+            maxEvents: 3,
+          },
         },
       ],
     });
@@ -67,5 +72,35 @@ describe('MockPaymentsApi', () => {
         { a: 'pay_live_1', b: 'pay_live_2', c: 'pay_live_3' },
       );
     });
+  });
+
+  it('waits a random delay within the configured range before each payment', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: CLOCK, useValue: () => now },
+        {
+          provide: MOCK_STREAM_CONFIG,
+          useValue: {
+            seed: 7,
+            minDelayMs: 10_000,
+            maxDelayMs: 20_000,
+            maxEvents: 20,
+          },
+        },
+      ],
+    });
+    const randomApi = TestBed.inject(MockPaymentsApi);
+    const arrivals: number[] = [];
+
+    scheduler.run(({ flush }) => {
+      randomApi.incoming$.subscribe(() => arrivals.push(scheduler.now()));
+      flush();
+    });
+
+    const gaps = arrivals.map((time, i) => time - (arrivals[i - 1] ?? 0));
+    expect(gaps).toHaveLength(20);
+    expect(gaps.every((gap) => gap >= 10_000 && gap <= 20_000)).toBe(true);
+    expect(new Set(gaps).size).toBeGreaterThan(1);
   });
 });

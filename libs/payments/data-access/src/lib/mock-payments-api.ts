@@ -3,14 +3,16 @@ import {
   createRng,
   createSeedPayments,
   generatePayment,
+  intBetween,
   type UnmatchedPayment,
 } from '@unmatched-payments/payments-domain';
-import { defer, interval, map, type Observable, of, take } from 'rxjs';
+import { concatMap, defer, map, type Observable, of, range, timer } from 'rxjs';
 import { CLOCK } from './clock';
 
 export interface MockStreamConfig {
   readonly seed: number;
-  readonly intervalMs: number;
+  readonly minDelayMs: number;
+  readonly maxDelayMs: number;
   // Bounds the demo stream so a tab left open does not grow the queue forever.
   readonly maxEvents: number;
 }
@@ -19,7 +21,12 @@ export const MOCK_STREAM_CONFIG = new InjectionToken<MockStreamConfig>(
   'MOCK_STREAM_CONFIG',
   {
     providedIn: 'root',
-    factory: () => ({ seed: 2026, intervalMs: 18_000, maxEvents: 500 }),
+    factory: () => ({
+      seed: 2026,
+      minDelayMs: 10_000,
+      maxDelayMs: 20_000,
+      maxEvents: 500,
+    }),
   },
 );
 
@@ -29,11 +36,15 @@ export class MockPaymentsApi {
   private readonly clock = inject(CLOCK);
 
   readonly incoming$: Observable<UnmatchedPayment> = defer(() => {
-    const rng = createRng(this.config.seed);
-    return interval(this.config.intervalMs).pipe(
-      take(this.config.maxEvents),
-      map((tick) =>
-        generatePayment(rng, { now: this.clock(), sequence: tick + 1 }),
+    const { seed, minDelayMs, maxDelayMs, maxEvents } = this.config;
+    const rng = createRng(seed);
+    // Separate PRNG so the timing does not change which payments are generated.
+    const delayRng = createRng(seed + 1);
+    return range(1, maxEvents).pipe(
+      concatMap((sequence) =>
+        timer(intBetween(delayRng, minDelayMs, maxDelayMs)).pipe(
+          map(() => generatePayment(rng, { now: this.clock(), sequence })),
+        ),
       ),
     );
   });

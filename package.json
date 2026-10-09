@@ -2,7 +2,9 @@
   "name": "@unmatched-payments/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "dev": "nx serve admin"
+  },
   "private": true,
   "dependencies": {
     "@angular/cdk": "22.1.8",

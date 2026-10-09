@@ -16,7 +16,7 @@ describe('MockPaymentsApi', () => {
         { provide: CLOCK, useValue: () => now },
         {
           provide: MOCK_STREAM_CONFIG,
-          useValue: { seed: 1, intervalMs: 6_000 },
+          useValue: { seed: 1, intervalMs: 6_000, maxEvents: 3 },
         },
       ],
     });
@@ -57,6 +57,15 @@ describe('MockPaymentsApi', () => {
           map((p) => p.receivedAt),
         ),
       ).toBe('6000ms (a|)', { a: now });
+    });
+  });
+
+  it('completes after maxEvents payments', () => {
+    scheduler.run(({ expectObservable }) => {
+      expectObservable(api.incoming$.pipe(map((p) => p.id))).toBe(
+        '6000ms a 5999ms b 5999ms (c|)',
+        { a: 'pay_live_1', b: 'pay_live_2', c: 'pay_live_3' },
+      );
     });
   });
 });

@@ -11,13 +11,22 @@ import {
   lucideSearch,
   lucideSun,
 } from '@ng-icons/lucide';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  type ActivatedRouteSnapshot,
+  NavigationEnd,
+  Router,
+  RouterLink,
+} from '@angular/router';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { PaymentsStore } from '@unmatched-payments/payments-data-access';
+import { filter, map } from 'rxjs';
 import { ThemeService } from '../theme.service';
+import { type Breadcrumb, BREADCRUMBS_KEY } from './breadcrumbs';
 
 @Component({
   selector: 'app-top-bar',
-  imports: [NgIcon, HlmButton],
+  imports: [NgIcon, HlmButton, RouterLink],
   providers: [
     provideIcons({ lucideBell, lucideMoon, lucideSearch, lucideSun }),
   ],
@@ -32,10 +41,20 @@ import { ThemeService } from '../theme.service';
       class="flex items-center gap-1.5 text-muted-foreground"
     >
       <span>Payments</span>
-      <span aria-hidden="true">/</span>
-      <span class="font-medium text-foreground" aria-current="page"
-        >Unmatched</span
-      >
+      @for (crumb of breadcrumbs(); track crumb.label; let last = $last) {
+        <span aria-hidden="true">/</span>
+        @if (last) {
+          <span class="font-medium text-foreground" aria-current="page">
+            {{ crumb.label }}
+          </span>
+        } @else if (crumb.link) {
+          <a [routerLink]="crumb.link" class="hover:text-foreground">
+            {{ crumb.label }}
+          </a>
+        } @else {
+          <span>{{ crumb.label }}</span>
+        }
+      }
     </nav>
 
     <div class="ml-auto flex items-center gap-2">
@@ -85,5 +104,24 @@ import { ThemeService } from '../theme.service';
 export class TopBar {
   protected readonly store = inject(PaymentsStore);
   protected readonly theme = inject(ThemeService);
+  private readonly router = inject(Router);
+
+  protected readonly breadcrumbs = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map(() => breadcrumbsOf(this.router.routerState.snapshot.root)),
+    ),
+    { initialValue: breadcrumbsOf(this.router.routerState.snapshot.root) },
+  );
   protected readonly isDark = computed(() => this.theme.theme() === 'dark');
+}
+
+function breadcrumbsOf(root: ActivatedRouteSnapshot): readonly Breadcrumb[] {
+  let route = root;
+  while (route.firstChild) {
+    route = route.firstChild;
+  }
+  return (
+    (route.data[BREADCRUMBS_KEY] as readonly Breadcrumb[] | undefined) ?? []
+  );
 }

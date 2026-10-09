@@ -13,18 +13,17 @@ export class ThemeService {
   );
 
   constructor() {
-    effect(() => {
-      const theme = this.theme();
-      this.root.classList.toggle('dark', theme === 'dark');
-      try {
-        localStorage.setItem(STORAGE_KEY, theme);
-      } catch {
-        // Storage can be blocked (private mode); the theme then lives for the session only.
-      }
-    });
+    effect(() => this.root.classList.toggle('dark', this.theme() === 'dark'));
   }
 
+  // Only an explicit choice is stored, so an untouched app keeps following the OS theme.
   toggle(): void {
-    this.theme.update((theme) => (theme === 'dark' ? 'light' : 'dark'));
+    const next = this.theme() === 'dark' ? 'light' : 'dark';
+    this.theme.set(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // Storage can be blocked (private mode); the theme then lives for the session only.
+    }
   }
 }
